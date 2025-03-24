@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import { spawn } from "child_process";
+const ffmpegPath = "/opt/homebrew/bin/ffmpeg";
 
 const videoStreamRoute = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -56,7 +57,7 @@ const startFFmpeg = (channel) => {
 
   console.log(`Starting FFmpeg for channel ${channel.id}`);
 
-  const ffmpegProcess = spawn("ffmpeg", [
+  const ffmpegProcess = spawn(ffmpegPath, [
     "-rtsp_transport",
     "tcp",
     "-i",
