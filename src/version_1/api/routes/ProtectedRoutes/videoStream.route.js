@@ -80,6 +80,10 @@ const startFFmpeg = (channel) => {
     path.join(channelDir, "stream.m3u8"),
   ]);
 
+  ffmpegProcess.on("error", (err) => {
+    console.error("FFmpeg Error:", err);
+  });
+
   ffmpegProcess.stderr.on("data", (data) => {
     console.log(`FFmpeg log (${channel.id}):`, data.toString());
   });
@@ -89,10 +93,9 @@ const startFFmpeg = (channel) => {
   });
 };
 
-// Remove the HLS folder before starting
+
 deleteHLSFolder();
 
-// Start streaming for all channels
 CHANNELS.forEach(startFFmpeg);
 
 videoStreamRoute.use("/", express.static(HLS_BASE_DIR));
