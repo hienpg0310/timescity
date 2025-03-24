@@ -3,7 +3,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import { spawn } from "child_process";
-const ffmpegPath = "/opt/homebrew/bin/ffmpeg";
+
+const ffmpegPath = "../Cellar/ffmpeg/7.1.1/bin/ffmpeg";
 
 const videoStreamRoute = express.Router();
 const __filename = fileURLToPath(import.meta.url);
