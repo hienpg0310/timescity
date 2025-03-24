@@ -4,8 +4,6 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 import { spawn } from "child_process";
 
-const ffmpegPath = "../Cellar/ffmpeg/7.1.1/bin/ffmpeg";
-
 const videoStreamRoute = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,7 +56,7 @@ const startFFmpeg = (channel) => {
 
   console.log(`Starting FFmpeg for channel ${channel.id}`);
 
-  const ffmpegProcess = spawn(ffmpegPath, [
+  const ffmpegProcess = spawn("ffmpeg", [
     "-rtsp_transport",
     "tcp",
     "-i",
@@ -82,9 +80,9 @@ const startFFmpeg = (channel) => {
     path.join(channelDir, "stream.m3u8"),
   ]);
 
-  ffmpegProcess.on("error", (err) => {
+  process.on("error", (err) => {
     console.error("FFmpeg Error:", err);
-  });
+});
 
   ffmpegProcess.stderr.on("data", (data) => {
     console.log(`FFmpeg log (${channel.id}):`, data.toString());
