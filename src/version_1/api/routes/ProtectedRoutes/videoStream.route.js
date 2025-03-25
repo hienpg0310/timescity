@@ -147,12 +147,12 @@ videoStreamRoute.get("/list", (req, res) => {
   res.json(
     CHANNELS.map((ch) => ({
       id: ch.id,
-      stream: `/hls/${ch.id}/stream.m3u8`,
+      stream: `/stream/${ch.id}/stream.m3u8`,
     }))
   );
 });
 
 // Phục vụ file HLS
-videoStreamRoute.use("/", express.static(HLS_BASE_DIR));
+videoStreamRoute.use("/stream", express.static(HLS_BASE_DIR));
 
 export default videoStreamRoute;
