@@ -13,8 +13,8 @@ import { readFileSync } from 'fs';
 import http from "http"; 
 
 dotenv.config();
-// const port = 5001;
-port = process.env.PORT || 5001;
+const port = 5001;
+// port = process.env.PORT || 5001;
 const app = express();
 // const serviceAccount = JSON.parse(readFileSync('./src/version_1/utils/drivermanagement-d9fb7-firebase-adminsdk-fbsvc-b9b747be3b.json', 'utf8'))
 const __filename = fileURLToPath(import.meta.url);
