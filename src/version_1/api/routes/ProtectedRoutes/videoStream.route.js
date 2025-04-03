@@ -7,7 +7,6 @@ import { spawn } from "child_process";
 const videoStreamRoute = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ffmpegProcesses = {};
 
 const CHANNELS = [
   {
@@ -52,16 +51,10 @@ const deleteHLSFolder = () => {
 
 // Function to start FFmpeg for each channel
 const startFFmpeg = (channel) => {
-
-   if (ffmpegProcesses[channel.id]) {
-     console.log(`FFmpeg is already running for channel ${channel.id}`);
-     return;
-   }
-
   const channelDir = path.join(HLS_BASE_DIR, channel.id);
   if (!fs.existsSync(channelDir)) fs.mkdirSync(channelDir, { recursive: true });
 
-  console.log(`Starting FFmpeg for channel ${channel.id}`);
+  // console.log(`Starting FFmpeg for channel ${channel.id}`);
 
   // const ffmpegProcess = spawn("ffmpeg", [
   //   "-rtsp_transport",
@@ -92,67 +85,82 @@ const startFFmpeg = (channel) => {
     "tcp",
     "-i",
     channel.url,
+    "-fflags",
+    "nobuffer",
+    "-flags",
+    "+global_header",
+    "-rtbufsize",
+    "64M",
+    "-vf",
+    "scale=640:360",
+    "-r",
+    "15",
+    "-b:v",
+    "500k",
+    "-maxrate",
+    "500k",
+    "-bufsize",
+    "1000k",
     "-c:v",
     "libx264",
     "-preset",
     "ultrafast",
     "-tune",
     "zerolatency",
-    "-b:v",
-    "500k", // Giảm bitrate
-    "-r",
-    "15", // Giảm FPS
-    "-vf",
-    "scale=640:360", // Giảm độ phân giải
     "-c:a",
     "aac",
+    "-b:a",
+    "64k",
     "-f",
     "hls",
     "-hls_time",
-    "2",
+    "6",
     "-hls_list_size",
-    "3",
+    "6",
     "-hls_flags",
     "delete_segments",
     path.join(channelDir, "stream.m3u8"),
   ]);
 
-  ffmpegProcesses[channel.id] = ffmpegProcess;
-
-  process.on("error", (err) => {
-    console.error("FFmpeg Error:", err);
-  });
-
   ffmpegProcess.stderr.on("data", (data) => {
     console.log(`FFmpeg log (${channel.id}):`, data.toString());
   });
 
-  // ffmpegProcess.on("exit", (code) => {
-  //   console.log(`FFmpeg exited for channel ${channel.id} with code ${code}`);
-  // });
-
   ffmpegProcess.on("exit", (code) => {
-    console.log(`FFmpeg exited for channel ${channel.id} with code ${code}`);
-    delete ffmpegProcesses[channel.id]; // Xóa khỏi danh sách nếu FFmpeg tắt
+    // console.log(`FFmpeg exited for channel ${channel.id} with code ${code}`);
   });
 };
 
+// Remove the HLS folder before starting
 deleteHLSFolder();
 
-// 🔹 **Chạy tất cả camera ngay khi server khởi động**
+// Start streaming for all channels
 CHANNELS.forEach(startFFmpeg);
 
-// API để lấy danh sách stream
+// videoStreamRoute.use("/", express.static(HLS_BASE_DIR));
+
+// Cấu hình route HLS với header tối ưu
+videoStreamRoute.use(
+  "/",
+  express.static(HLS_BASE_DIR, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".m3u8")) {
+        res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Cache-Control", "no-store");
+      }
+      if (filePath.endsWith(".ts")) {
+        res.setHeader("Content-Type", "video/mp2t");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+      }
+    },
+  })
+);
+
 videoStreamRoute.get("/list", (req, res) => {
   res.json(
-    CHANNELS.map((ch) => ({
-      id: ch.id,
-      stream: `/stream/${ch.id}/stream.m3u8`,
-    }))
+    CHANNELS.map((ch) => ({ id: ch.id, stream: `/hls/${ch.id}/stream.m3u8` }))
   );
 });
-
-// Phục vụ file HLS
-videoStreamRoute.use("/stream", express.static(HLS_BASE_DIR));
 
 export default videoStreamRoute;
